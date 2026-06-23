@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora de Juros Compostos Avançada</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .calculadora {
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 400px;
+        }
+        h2 {
+            text-align: center;
+            color: #333;
+            margin-top: 0;
+        }
+        .grupo-input {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+            font-size: 14px;
+        }
+        select, input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-sizing: border-box;
+            font-size: 15px;
+        }
+        select {
+            background-color: #eef2f5;
+            font-weight: bold;
+            color: #0056b3;
+            cursor: pointer;
+            margin-bottom: 20px;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            margin-top: 10px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .resultado {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #d4edda;
+            color: #155724;
+            border-radius: 5px;
+            display: none;
+            font-size: 18px;
+            text-align: center;
+        }
+        .erro {
+            color: #721c24;
+            background-color: #f8d7da;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 14px;
+            margin-top: 15px;
+            text-align: center;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="calculadora">
+        <h2>Calculadora Financeira</h2>
+        
+        <label for="tipoCalculo">O que você deseja calcular?</label>
+        <select id="tipoCalculo" onchange="atualizarFormulario()">
+            <option value="montante">Montante (Valor Final)</option>
+            <option value="capital">Capital Inicial</option>
+            <option value="taxa">Taxa de Juros</option>
+            <option value="tempo">Tempo (Períodos)</option>
+        </select>
+        
+        <hr style="border: 0; border-top: 1px solid #eee; margin-bottom: 20px;">
+
+        <div class="grupo-input" id="div-montante" style="display: none;">
+            <label for="montante">Montante Final (R$):</label>
+            <input type="number" id="montante" placeholder="Ex: 1500.00" step="0.01">
+        </div>
+
+        <div class="grupo-input" id="div-capital">
+            <label for="capital">Capital Inicial (R$):</label>
+            <input type="number" id="capital" placeholder="Ex: 1000.00" step="0.01">
+        </div>
+        
+        <div class="grupo-input" id="div-taxa">
+            <label for="taxa">Taxa de Juros (% por período):</label>
+            <input type="number" id="taxa" placeholder="Ex: 1.5" step="0.01">
+        </div>
+        
+        <div class="grupo-input" id="div-tempo">
+            <label for="tempo">Tempo (Quantidade de períodos):</label>
+            <input type="number" id="tempo" placeholder="Ex: 12">
+        </div>
+        
+        <button onclick="calcular()">Calcular</button>
+        
+        <div id="mensagem-erro" class="erro"></div>
+        <div class="resultado" id="resultado-box"></div>
+    </div>
+
+    <script>
+        // Função para mostrar/esconder os campos dependendo do que será calculado
+        function atualizarFormulario() {
+            const tipo = document.getElementById('tipoCalculo').value;
+            
+            // Esconde todos primeiro
+            document.getElementById('div-montante').style.display = 'none';
+            document.getElementById('div-capital').style.display = 'none';
+            document.getElementById('div-taxa').style.display = 'none';
+            document.getElementById('div-tempo').style.display = 'none';
+            document.getElementById('resultado-box').style.display = 'none';
+            document.getElementById('mensagem-erro').style.display = 'none';
+
+            // Mostra os campos necessários (todos exceto o que o usuário quer descobrir)
+            if (tipo !== 'montante') document.getElementById('div-montante').style.display = 'block';
+            if (tipo !== 'capital') document.getElementById('div-capital').style.display = 'block';
+            if (tipo !== 'taxa') document.getElementById('div-taxa').style.display = 'block';
+            if (tipo !== 'tempo') document.getElementById('div-tempo').style.display = 'block';
+        }
+
+        function formatarMoeda(valor) {
+            return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valor);
+        }
+
+        function calcular() {
+            const tipo = document.getElementById('tipoCalculo').value;
+            
+            // Lendo os valores dos inputs
+            const M = parseFloat(document.getElementById('montante').value);
+            const C = parseFloat(document.getElementById('capital').value);
+            const i = parseFloat(document.getElementById('taxa').value) / 100; // Converte % para decimal
+            const t = parseFloat(document.getElementById('tempo').value);
+
+            const erroDiv = document.getElementById('mensagem-erro');
+            const resultadoBox = document.getElementById('resultado-box');
+            
+            erroDiv.style.display = 'none';
+            resultadoBox.style.display = 'none';
+
+            let resultado = 0;
+            let textoFinal = "";
+
+            // Lógica de cálculo com base na seleção
+            try {
+                if (tipo === 'montante') {
+                    if (isNaN(C) || isNaN(i) || isNaN(t)) throw "Preencha Capital, Taxa e Tempo.";
+                    resultado = C * Math.pow((1 + i), t);
+                    textoFinal = `<strong>Montante:</strong><br>${formatarMoeda(resultado)}`;
+                } 
+                else if (tipo === 'capital') {
+                    if (isNaN(M) || isNaN(i) || isNaN(t)) throw "Preencha Montante, Taxa e Tempo.";
+                    resultado = M / Math.pow((1 + i), t);
+                    textoFinal = `<strong>Capital Inicial:</strong><br>${formatarMoeda(resultado)}`;
+                } 
+                else if (tipo === 'taxa') {
+                    if (isNaN(M) || isNaN(C) || isNaN(t) || C <= 0) throw "Preencha Montante, Capital e Tempo (Capital > 0).";
+                    resultado = (Math.pow(M / C, 1 / t) - 1) * 100;
+                    textoFinal = `<strong>Taxa de Juros:</strong><br>${resultado.toFixed(2)}% por período`;
+                } 
+                else if (tipo === 'tempo') {
+                    if (isNaN(M) || isNaN(C) || isNaN(i) || C <= 0 || i <= 0) throw "Preencha Montante, Capital e Taxa válidos.";
+                    resultado = Math.log(M / C) / Math.log(1 + i);
+                    textoFinal = `<strong>Tempo Necessário:</strong><br>${resultado.toFixed(2)} períodos`;
+                }
+
+                // Exibir resultado
+                resultadoBox.innerHTML = textoFinal;
+                resultadoBox.style.display = 'block';
+
+            } catch (erroMensagem) {
+                // Caso falte algum dado, mostra o erro
+                erroDiv.innerText = erroMensagem;
+                erroDiv.style.display = 'block';
+            }
+        }
+    </script>
+
+</body>
+</html>
